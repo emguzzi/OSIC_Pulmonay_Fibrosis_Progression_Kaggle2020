@@ -1,5 +1,5 @@
 #  Copyright (c) 2020.
-#  Author: Silvio Barandun
+#  Author: Silvio
 from PIL import Image
 import numpy as np
 import pydicom
