@@ -4,6 +4,7 @@ With this code we ranked 351th in the final ranking (top 17%) with team name Zar
 
 ## Introduction & Task Description
 The task of the challenge was to predict the decline during a period of time in lung function measured as FVC.  Based on CT scans, metadata on the patients and FVC measurements for past weeks, we predicted the value of the FVC at each future week together with a confidence value. The goodness of the prediction was then assesed using the [Laplacian log likelihood](https://www.kaggle.com/c/osic-pulmonary-fibrosis-progression/overview/evaluation).
+§§§ opposition with quantile regression§§§
 Our model used a fully connected network to predict the slope of a linear decay for the FVC value of each patient, and we predicted a value of the confidence linearly increasing with the number of the weeks.
 In this repository we will provide most of the code we us and analyze our results. All the original data and additional information on the competition can be found [here](https://www.kaggle.com/c/osic-pulmonary-fibrosis-progression).
 
