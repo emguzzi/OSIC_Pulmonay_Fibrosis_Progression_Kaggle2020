@@ -26,7 +26,7 @@ Due to time constraints our fine tuning was a bit limited. However, in this sect
 
 To start with, the parameters with the strongest effect on the score were the bias (value at the base week) and slope of the confidence line. This was expected since, due to the nature of the used metric (Laplacian log likelihood), the confidence value has a strong effect on the resulting score and therefore an accurate tuning was fundamental.
 
-The remaining part of our fine tuning process was devoted to finding the best architecture, in particular number of layers and neurons, and attributes, in particular number of epochs and activation functions, for the network. The results of this process can be found in §§§§§. Intrestingly we discovered that shallower networks, *i.e.* from 1 to 3 fully connected layers, failed to extract information from the data and predicted a constant decay with value equal to the value of base weel.
+The remaining part of our fine tuning process was devoted to finding the best architecture, in particular number of layers and neurons, and attributes, in particular number of epochs and activation functions, for the network. The results of this process can be found in §§§§§. Intrestingly we discovered that shallower networks, *i.e.* from 1 to 3 fully connected layers, failed to extract information from the data and, as a result, they always predicted the value of the base week as a constant value.
 
 
 
