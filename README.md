@@ -11,3 +11,4 @@ The main part of our solution can be summarized in the following points:
 
 As a first step of our solution we built a robust pipeline for preprocessing and feature extraction for the CT scans. For the feature extraction part we used the VGG16 network of pytorch
 
+## Preprocessing
