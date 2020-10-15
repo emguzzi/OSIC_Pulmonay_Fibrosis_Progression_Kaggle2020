@@ -21,7 +21,10 @@ For the preprocessing of the images we extracted the Hounsfield units (HU) from 
 As a result of this step we obtained 25088 dimensional feature vector. Since the images were very similar it was reasonable to expect very similar feature vector, indeed most of the feature had 0 variance (see Figure §§§§§). Therefore we set a threshold of 1 and kept only those feature with variance greater or equal than the threshold. A problem with this approach is the fact that the main differences between the images arise from the position of the scan, *i.e.* CT scans around the throat looks very different from CT scans at the center of the lungs (see Figure §§§§§ and Figure §§§§§). Therefore, we refrained from increasing the threshold even further, since we did not want the position of the CT scan to be the dominant feature obtained via this feature extraction procedure.
 TODO (?) few words on the preprocessing of tabular data
 ## Model
-After some data exploration, we decided to model the FVC decay with a linear function associating to `weeks` the `FVC` values and passing though `(base_week,base_FVC)`. $$x=\sqrt{2}$$
+After some data exploration, we decided to model the FVC decay with a linear function associating to `weeks` the `FVC` values and passing though `(base_week,base_FVC)`. We fed a regression neural network (see below) with the data as discussed above with one final node. The output of the NN was expected to be the slope of the linear function for the given patient. We optimised the network using a MSE loss.
+
+As the competition was asking also for a confidence we adopeted a similar linear assumption for this parameter. In particular we assumed a minimal confidence value for the measurement closest to the CT scan (i.e. at `base_week`) with a linear increase with `abs(week - base_week)`.
+
 TODO describe how the prediction works a bit more in detail (Base week, line for FVC and confidence starting from base week, ecc...)
 ## Fine tuning 
 Due to time constraints our fine tuning was a bit limited. However, in this section, we will illustrate the main parameters that we considered for fine tuning. 
@@ -33,9 +36,3 @@ The remaining part of our fine tuning process was devoted to finding the best ar
 
 
 ## Conclusion
-
-
-
-
-
-<script type="text/javascript" async src="https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-MML-AM_CHTML">
