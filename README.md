@@ -23,7 +23,7 @@ TODO (?) few words on the preprocessing of tabular data
 ## Model
 After some data exploration, we decided to model the FVC decay with a linear function associating to `weeks` the `FVC` values and passing though `(base_week,base_FVC)`. We fed a regression neural network (see below) with the data as discussed above with one final node. The output of the NN was expected to be the slope of the linear function for the given patient. We optimised the network using a MSE loss.
 
-As the competition was asking also for a confidence we adopeted a similar linear assumption for this parameter. In particular we assumed a minimal confidence value for the measurement closest to the CT scan (i.e. at `base_week`) with a linear increase with `abs(week - base_week)`.
+As the competition was asking also for a confidence we adopeted a similar linear assumption for this parameter. In particular we assumed a minimal confidence value for the measurement closest to the CT scan (i.e. at `base_week`) with a linear increase with `abs(week - base_week)`. The parameters of this model (i.e. slope and minimal value at `base_week`) were optimised with a grid search. We also tried to make these parameters part of the NN output and optimise with respect to the true metric of the competition, but as a matter of facts the optimiser was not able to bring the values out of small local optimal values wich were not global optimal values.
 
 TODO describe how the prediction works a bit more in detail (Base week, line for FVC and confidence starting from base week, ecc...)
 ## Fine tuning 
