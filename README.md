@@ -21,6 +21,7 @@ For the preprocessing of the images we extracted the Hounsfield units (HU) from 
 As a result of this step we obtained 25088 dimensional feature vector. Since the images were very similar it was reasonable to expect very similar feature vector, indeed most of the feature had 0 variance (see Figure §§§§§). Therefore we set a threshold of 1 and kept only those feature with variance greater or equal than the threshold. A problem with this approach is the fact that the main differences between the images arise from the position of the scan, *i.e.* CT scans around the throat looks very different from CT scans at the center of the lungs (see Figure §§§§§ and Figure §§§§§). Therefore, we refrained from increasing the threshold even further, since we did not want the position of the CT scan to be the dominant feature obtained via this feature extraction procedure.
 TODO (?) few words on the preprocessing of tabular data
 ## Model
+After some data exploration, we decided to model the decay with a linear function associating to 'weeks' the 'FVC' values and passing though '(base_week,base_FVC)'
 TODO describe how the prediction works a bit more in detail (Base week, line for FVC and confidence starting from base week, ecc...)
 ## Fine tuning 
 Due to time constraints our fine tuning was a bit limited. However, in this section, we will illustrate the main parameters that we considered for fine tuning. 
