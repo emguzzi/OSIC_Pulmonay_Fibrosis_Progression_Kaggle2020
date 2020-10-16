@@ -22,15 +22,19 @@ For the preprocessing of the images we extracted the Hounsfield units (HU) from 
 After resizing and reformatting the thresholded images we fed them into the VGG16 network for the feature extranction.
 
 As a result of this step we obtained 25088 dimensional feature vector. Since the images were very similar it was reasonable to expect very similar feature vector, indeed most of the feature had 0 variance (see Figure below).
+
 ![Figure](images/variance.png)
 
 Therefore we set a threshold of 1 and kept only those feature with variance greater or equal than the threshold. A problem with this approach is the fact that the main differences between the images arise from the position of the scan, *i.e.* CT scans around the throat looks very different from CT scans at the center of the lungs (see Figures below).
+
 ![Figure](images/low.png)
 ![Figure](images/top.png)
 ![Figure](images/center.png)
 
 Therefore, we refrained from increasing the threshold even further, since we did not want the position of the CT scan to be the dominant feature obtained via this feature extraction procedure.
-TODO (?) few words on the preprocessing of tabular data
+
+We preprocessed the tablulardata in a standar fashion, using one-hot-encoding for the categorical entries (`Sex` and `Smoking status`). We decided not to scale the data for performance purposes.
+
 ## Model
 After some data exploration, we decided to model the FVC decay with a linear function associating to `weeks` the `FVC` values and passing though `(base_week,base_FVC)`. This decision was taken for a series of observation, between which a significan better performance that other models -- such as polynomial regression (in various degrees) and log-decay. We fed a regression neural network (see below) with the data obtained by the above preprocessing with one final node. The output of the NN was expected to be the slope of the linear function for the given patient. So, concisely, the NN was used to obtain a personalised decay slope for each patient based on the tablular data and CT features. We optimised the network using a MSE loss.
 
