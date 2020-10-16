@@ -22,6 +22,9 @@ As a result of this step we obtained 25088 dimensional feature vector. Since the
 ![Figure](images/variance.png)
 
 Therefore we set a threshold of 1 and kept only those feature with variance greater or equal than the threshold. A problem with this approach is the fact that the main differences between the images arise from the position of the scan, *i.e.* CT scans around the throat looks very different from CT scans at the center of the lungs (see Figures below).
+![Figure](images/low.png)
+![Figure](images/top.png)
+![Figure](images/center.png)
 
 Therefore, we refrained from increasing the threshold even further, since we did not want the position of the CT scan to be the dominant feature obtained via this feature extraction procedure.
 TODO (?) few words on the preprocessing of tabular data
