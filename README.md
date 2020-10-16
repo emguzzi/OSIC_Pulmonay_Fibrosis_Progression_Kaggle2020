@@ -18,6 +18,7 @@ As a first step of our solution we built a robust pipeline for preprocessing and
 
 For the preprocessing of the images we extracted the Hounsfield units (HU) from the dicom files. Setting a threshold on these units allowed us to consider the parts of the scan containing only air, this helped us to isolate the lungs from the rest of the body (see Figure below).
 ![Figure](images/lungs_3.png)
+
 After resizing and reformatting the thresholded images we fed them into the VGG16 network for the feature extranction.
 
 As a result of this step we obtained 25088 dimensional feature vector. Since the images were very similar it was reasonable to expect very similar feature vector, indeed most of the feature had 0 variance (see Figure below).
