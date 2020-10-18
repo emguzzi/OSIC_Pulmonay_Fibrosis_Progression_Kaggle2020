@@ -34,7 +34,7 @@ Therefore we set a threshold of 1 and kept only those feature with variance grea
 
 Therefore, we refrained from increasing the threshold even further, since we did not want the position of the CT scan to be the dominant feature obtained via this feature extraction procedure.
 
-We preprocessed the tablulardata in a standar fashion, using one-hot-encoding for the categorical entries (`Sex` and `Smoking status`). We decided not to scale the data for performance purposes.
+We preprocessed the tablulardata in a standard fashion, using one-hot-encoding for the categorical entries (`Sex` and `Smoking status`). We decided not to scale the data for performance purposes.
 
 ## Model
 After some data exploration, we decided to model the FVC decay with a linear function associating to `weeks` the `FVC` values and passing though `(base_week,base_FVC)`. This decision was taken for a series of observation, between which a significan better performance that other models -- such as polynomial regression (in various degrees) and log-decay. We fed a regression neural network (see below) with the data obtained by the above preprocessing with one final node. The output of the NN was expected to be the slope of the linear function for the given patient. So, concisely, the NN was used to obtain a personalised decay slope for each patient based on the tablular data and CT features. We optimised the network using a MSE loss.
