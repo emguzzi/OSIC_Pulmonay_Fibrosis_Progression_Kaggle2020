@@ -14,7 +14,7 @@ The main part of our solution can be summarized in the following points:
 * Fine-tuning of the model.
 
 ## Preprocessing & Feature Extraction
-As a first step of our solution we built a robust pipeline for preprocessing and feature extraction for the CT scans. For the feature extraction part we used the VGG16 network of pytorch. The main difficulties for this part was the robustness of the pipeline; in particular dealing with corrupted dicom files and different format/size (see Figure §§§§§) of scans was fundamental. Since we mainly used the HPC cluster Euler from ETH and the notebooks from Kaggle to train our model some robustness of the code was also need to run on all the platforms.
+As a first step of our solution we built a robust pipeline for preprocessing and feature extraction for the CT scans. For the feature extraction part we used the VGG16 network of pytorch. The main difficulties for this part was the robustness of the pipeline; in particular dealing with corrupted dicom files and different format/size of scans was fundamental. Since we mainly used the HPC cluster Euler from ETH and the notebooks from Kaggle to train our model some robustness of the code was also need to run on all the platforms.
 
 For the preprocessing of the images we extracted the Hounsfield units (HU) from the dicom files. Setting a threshold on these units allowed us to consider the parts of the scan containing only air, this helped us to isolate the lungs from the rest of the body (see Figure below).
 
@@ -46,4 +46,10 @@ Due to time constraints our fine tuning was a bit limited. However, in this sect
 
 To start with, the parameters with the strongest effect on the score were the bias (value at the base week) and slope of the confidence line. This was expected since, due to the nature of the used metric (Laplacian log likelihood), the confidence value has a strong effect on the resulting score and therefore an accurate tuning was fundamental.
 
-The remaining part of our fine tuning process was devoted to finding the best architecture, in particular number of layers and neurons, and attributes, in particular number of epochs and activation functions, for the network. The results of this process can be found in §§§§§. Intrestingly we discovered that shallower networks, *i.e.* from 1 to 3 fully connected layers, failed to extract information from the data and, as a result, they always predicted the value of the base week as a constant value.
+The remaining part of our fine tuning process was devoted to finding the best architecture, in particular number of layers and neurons, and attributes, in particular number of epochs and activation functions, for the network. The best performing model we found is the following:
+* 5 fully connected layer with dimensions 512-512-256-256-128
+* activation function [Softplus](https://pytorch.org/docs/stable/generated/torch.nn.Softplus.html) with $\beta = 5$
+* minimal value for confidence 80
+* slope for confidence 4
+* the model was trained for 50 epochs
+Intrestingly we discovered that shallower networks, *i.e.* from 1 to 3 fully connected layers, failed to extract information from the data and, as a result, they always predicted the value of the base week as a constant value.
