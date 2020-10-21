@@ -48,7 +48,7 @@ To start with, the parameters with the strongest effect on the score were the bi
 
 The remaining part of our fine tuning process was devoted to finding the best architecture, in particular number of layers and neurons, and attributes, in particular number of epochs and activation functions, for the network. The best performing model we found is the following:
 * 5 fully connected layer with dimensions 512-512-256-256-128
-* activation function [Softplus](https://pytorch.org/docs/stable/generated/torch.nn.Softplus.html) with &beta = 5
+* activation function [Softplus](https://pytorch.org/docs/stable/generated/torch.nn.Softplus.html) with &beta; = 5
 * minimal value for confidence 80
 * slope for confidence 4
 * the model was trained for 50 epochs
