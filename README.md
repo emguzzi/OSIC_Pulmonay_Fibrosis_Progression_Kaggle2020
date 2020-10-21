@@ -51,7 +51,8 @@ The remaining part of our fine tuning process was devoted to finding the best ar
 * activation function [Softplus](https://pytorch.org/docs/stable/generated/torch.nn.Softplus.html) with &beta; = 5
 * minimal value for confidence 80
 * slope for confidence 4
-* the model was trained for 50 epochs
+* the model was trained for 50 epochs with learning rate 0.0075
+
 
 
 Intrestingly we discovered that shallower networks, *i.e.* from 1 to 3 fully connected layers, failed to extract information from the data and, as a result, they always predicted the value of the base week as a constant value.
