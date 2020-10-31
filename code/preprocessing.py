@@ -1,5 +1,3 @@
-#  Copyright (c) 2020.
-#  Author: Silvio
 from PIL import Image
 import numpy as np
 import pydicom
@@ -43,7 +41,7 @@ def feat_extr(model, path):
     ##############################################
     # Returns the 1000 dim feature vector after pre-trained feature extractor of <model>
     ##############################################
-    img = bw2d_to_RGB3d(prepro_isolate_lungs(get_slice('../osic-pulmonary-fibrosis-progression/train' + '/' + path)))
+    img = bw2d_to_RGB3d(prepro_isolate_lungs(get_slice(path)))
     preprocess = transforms.Compose([
         transforms.Resize(256),
         transforms.CenterCrop(224),

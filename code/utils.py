@@ -1,34 +1,22 @@
-#  Copyright (c) 2020.
-#  Author: Silvio
-from PIL import Image
 import numpy as np
 import pandas as pd
-import pydicom
-from skimage import transform
 import torch.utils.data
-from torchvision import transforms
 import os
 from sklearn import preprocessing
 import torch.nn as nn
-import torch.utils.data
-import torch.nn.functional as F
-from tqdm import tqdm, trange
 import random
 import torch
 import torch.utils.data
 import csv
-import time as time
 import matplotlib.pyplot as plt
-from sklearn import random_projection
-import random
 
 
 # =============================================================================
 # Def Regression NN
 # =============================================================================
 class RegressionNetwork(nn.Module):
-    def __init__(self, input_size=1051, activation=nn.Softplus()):
-        super(RegressionNetwork1, self).__init__()
+    def __init__(self, input_size=1051, activation=nn.Softplus(beta = 5)):
+        super(RegressionNetwork, self).__init__()
         self.fc1 = nn.Linear(input_size, 512)
         self.fc2 = nn.Linear(512, 512)
         self.fc3 = nn.Linear(512, 512)
@@ -64,23 +52,6 @@ def metric(true_fvc, predicted_fvc, confidence):
     return met
 
 
-def compute_score_cv(submission, test):
-    # =============================================================================
-    # submission is in the format given by predict as pandas while test is the test.csv as list
-    # Returns score as given by the competition
-    # =============================================================================
-    score = []
-    for row in test:
-        true_fvc = row[1]
-        week = row[0]
-        patient = row[4]
-        # on euler we have to keep the last index [:2] while local [:1] as in compute score
-        predicted_fvc = submission.loc[submission['Patient_Week'] == patient + '_' + str(int(float(week)))][
-            ['FVC', 'Confidence']].values[0][0]
-        confidence = submission.loc[submission['Patient_Week'] == patient + '_' + str(int(float(week)))][
-            ['FVC', 'Confidence']].values[0][1]
-        score.append(metric(float(true_fvc), float(predicted_fvc), float(confidence)))
-    return sum(score) / len(score)
 
 
 def compute_score(submission, test):
@@ -100,40 +71,6 @@ def compute_score(submission, test):
         score.append(metric(float(true_fvc), float(predicted_fvc), float(confidence)))
 
     return sum(score) / len(score)
-
-
-def prepare_val(data_path, working_path, n_val):
-    # =============================================================================
-    #     choose n_val random patient to validate the model, and create
-    #     3 files val_train.csv, val_test.csv, val_true.csv st they can be
-    #     plugged in the pipeline to get a validation score
-    # =============================================================================
-    pd_train = pd.read_csv(data_path + 'train.csv')
-    ids = pd_train['Patient'].unique()
-
-    # select n_val id at random
-    val_ids = random.sample(list(ids), n_val)
-
-    # avoid problematic id for validation
-    prob1 = 'ID00011637202177653955184'
-    prob2 = 'ID00052637202186188008618'
-    while (prob1 in val_ids or prob2 in val_ids):
-        val_ids = random.sample(list(ids), n_val)
-
-    # remove the corresponding row from pd_train and save as val_train
-    pd_train[pd_train['Patient'].isin(val_ids) == False].to_csv(working_path + 'val_train.csv', index=False)
-
-    # save the validation values
-    pd_train[pd_train['Patient'].isin(val_ids)].to_csv(working_path + 'val_true.csv', index=False)
-
-    # prepare the test file
-    val_test = pd.DataFrame()
-    for patient in val_ids:
-        patient_line = pd_train[pd_train['Patient'] == patient].iloc[0, :]
-        val_test = val_test.append(patient_line, ignore_index=True)
-    cols = ['Patient', 'Weeks', 'FVC', 'Percent', 'Age', 'Sex', 'SmokingStatus']
-    val_test = val_test[cols]
-    val_test.to_csv(working_path + 'val_test.csv', index=False)
 
 
 def prepare_train_data(data_path, working_path, validation):
@@ -192,10 +129,9 @@ def prepare_train_data(data_path, working_path, validation):
     cols = ['Patient', 'Age', 'Male', 'Female', 'Ex-smoker', 'Never smoked', 'Currently smokes', 'BaseWeek',
             'BaseFVC', 'BasePercent', 'list_dicom']
 
-    dicom_pd = dicom_pd[cols]
-    dicom_pd.to_csv(working_path + 'X_train_new.csv', index=False)
-    Y_train.to_csv(working_path + 'Y_train_new.csv', index=False)
-    return dicom_pd, Y_train
+    X_train = dicom_pd[cols]
+
+    return X_train, Y_train
 
 
 def my_loss(output, target_fvc, week_from_0, base_week, base_fvc):
@@ -338,12 +274,12 @@ def prepare_test_data(data_path, working_path, validation):
     cols = ['Patient', 'Age', 'Male', 'Female', 'Ex-smoker', 'Never smoked', 'Currently smokes', 'BaseWeek',
             'BaseFVC', 'BasePercent', 'list_dicom']
 
-    dicom_pd = dicom_pd[cols]
-    dicom_pd.to_csv(working_path + 'X_test.csv', index=False)
-    return dicom_pd
+    X_test = dicom_pd[cols]
+    X_test.to_csv(working_path + 'X_test.csv', index=False)
+    return X_test
 
 
-def predict_new_linear_model(pd_test0, net, working_path, coef_confi):
+def predict_linear_model(pd_test0, net, working_path, coef_confi):
     # =============================================================================
     # Generates a 'submission.csv' file as requested by the competition by leting go pd_test0 trough the net
     # =============================================================================
@@ -363,7 +299,6 @@ def predict_new_linear_model(pd_test0, net, working_path, coef_confi):
 
     pd_list_scans = pd_test[['Patient', 'list_dicom']]
     pd_base = pd_test[['Patient', 'BaseFVC', 'BaseWeek']]
-    np_base = pd_base.to_numpy()
     pd_test = pd_test.drop(['list_dicom'], axis=1)
     np_X = pd_test.to_numpy()
     # encode the ids using sklearn labelencoders
@@ -375,7 +310,6 @@ def predict_new_linear_model(pd_test0, net, working_path, coef_confi):
     pt_test = torch.from_numpy(np_X.astype(float)).float()
 
     predictions_list = []
-    predictions_slope_list = []
     pt_X_to_feed = torch.empty((0, pt_test.shape[1] + index_feat.shape[0] - 1)).float()
     for patient in ids:
         base_week = pd_base[pd_base['Patient'] == patient]['BaseWeek'].values[0]
@@ -412,7 +346,7 @@ def predict_new_linear_model(pd_test0, net, working_path, coef_confi):
 
 def analyse_performance(data_path, working_path, net, pd_X, pd_Y,
                         num_epochs, batch_size, learning_rate, feature_size,
-                        pd_test, coef_confi=3, validation=True):
+                        pd_test, coef_confi=(80,4), validation=True):
     # =============================================================================
     # Outputs a plot with loss values and validation score
     # =============================================================================
@@ -425,12 +359,12 @@ def analyse_performance(data_path, working_path, net, pd_X, pd_Y,
     losses = []
     score = []
     for i in range(num_epochs):
-        net, losses_one = train_new_linear_model(data_path, working_path, net, pd_X, pd_Y,
+        net, losses_one = train_linear_model(data_path, working_path, net, pd_X, pd_Y,
                                                  1, batch_size, learning_rate, feature_size)
         losses_one = losses_one[0]
         losses.append(losses_one)
 
-        predict_new_linear_model(pd_test, net, working_path, coef_confi=3)
+        predict_linear_model(pd_test, net, working_path, coef_confi)
         predictions = pd.read_csv(working_path + 'submission.csv')
 
         score.append(compute_score(predictions, test))
@@ -453,165 +387,3 @@ def analyse_performance(data_path, working_path, net, pd_X, pd_Y,
         plt.savefig('Loss_vs_ValScore.png')
 
 
-def prepare_fold(data_path, number_fold):
-    # =============================================================================
-    # return number_fold dataframe with disjoint ids to perform cv
-    # =============================================================================
-
-    pd_train = pd.read_csv(data_path + 'train.csv')
-    ids = pd_train['Patient'].unique()
-
-    patient_per_fold = int(len(ids) / number_fold)
-    # shuffle the ids before dividing them into folds
-    random.shuffle(ids)
-
-    # create the df corresponding to the folds
-    fold_data = {}
-    for fold in range(number_fold):
-        if fold == number_fold - 1:
-            # include in the last fold all the remaining ids
-            X = pd_train[pd_train['Patient'].isin(ids[fold * patient_per_fold:]) == True]
-
-        else:
-            X = pd_train[pd_train['Patient'].isin(ids[fold * patient_per_fold:(fold + 1) * patient_per_fold]) == True]
-
-        fold_data[fold] = X
-
-    return fold_data
-
-
-def prepare_train_data_cv(data_path, working_path, train, validation):
-    # =============================================================================
-    # same as predict_train_data but train is given as input so that this works with the validation
-    # =============================================================================
-    folder = 'train/'
-
-    train_ids = train['Patient'].unique()
-    n_dicom_dict = {"Patient": [], "n_dicom": [], "list_dicom": []}
-
-    for Patient_id in train_ids:
-        n_dicom_dict["n_dicom"].append(len(os.listdir(data_path + folder + Patient_id)))
-        n_dicom_dict["Patient"].append(Patient_id)
-        # list_dicom_id = sorted(list(np.random.choice(
-        #    np.array([int(i.split("/")[-1][:-4]) for i in os.listdir(data_path + folder + Patient_id)]), 10)))
-        # instead of taking randomly selected scan take linearly spaced scan
-        scan_names = np.sort(
-            np.array([int(i.split("/")[-1][:-4]) for i in os.listdir(data_path + folder + Patient_id)]))
-        delta = int(len(scan_names) / 10)
-        list_dicom_id = [scan_names[i * delta] for i in range(10)]
-        n_dicom_dict["list_dicom"].append(list_dicom_id)
-    dicom_pd = pd.DataFrame(n_dicom_dict)
-    temp_pd = pd.DataFrame(columns=train.columns)
-
-    for i in range(len(dicom_pd)):
-        patient_pd = train[train.Patient == dicom_pd.iloc[i].Patient]
-        zeroweek = patient_pd['Weeks'].min()
-        temp_pd = temp_pd.append(patient_pd[patient_pd.Weeks == zeroweek].iloc[0])
-    dicom_pd = pd.merge(dicom_pd, temp_pd, on=['Patient'])
-    dicom_pd.rename(columns={'FVC': 'BaseFVC', 'Weeks': 'BaseWeek', 'Percent': 'BasePercent'}, inplace=True)
-    df = pd.DataFrame(columns=dicom_pd.columns)
-    df['Weeks'] = None
-    df['FVC'] = None
-    for i in range(len(dicom_pd)):
-        dicom_pd_patient = dicom_pd[dicom_pd.Patient == dicom_pd.iloc[i].Patient]
-        patient_pd = train[train.Patient == dicom_pd.iloc[i].Patient]
-
-        dicom_pd_patient = pd.concat([dicom_pd_patient] * len(patient_pd), axis=0, ignore_index=True)
-
-        dicom_pd_patient = pd.concat(
-            [dicom_pd_patient.reset_index(drop=True), patient_pd[['Weeks', 'FVC']].reset_index(drop=True)], axis=1)
-        df = df.append(dicom_pd_patient)
-    dicom_pd = df
-    # one hot encoding for Sex & SmokingStatus
-    cols = ['Sex', 'SmokingStatus']
-    values = {'Sex': ['Male', 'Female'], 'SmokingStatus': ['Ex-smoker', 'Never smoked', 'Currently smokes']}
-    for col in cols:
-        for val in values[col]:
-            dicom_pd[val] = (dicom_pd[col] == val).astype(int)
-        dicom_pd.drop(col, axis=1, inplace=True)
-    Y_train = dicom_pd[['Weeks', 'FVC', 'BaseWeek', 'BaseFVC']]
-    # set the columns of X_test in the same order as the one in X_train.csv
-    cols = ['Patient', 'Weeks', 'Age', 'Male', 'Female', 'Ex-smoker', 'Never smoked', 'Currently smokes', 'BaseWeek',
-            'BaseFVC', 'BasePercent', 'list_dicom']
-    X_train = dicom_pd[cols]
-    # drop the line corresponding to the base week
-    Y_train = Y_train[~(Y_train.Weeks == Y_train.BaseWeek)]
-    X_train = X_train[~(X_train.Weeks == X_train.BaseWeek)]
-
-    no_weeks = ['Patient', 'Age', 'Male', 'Female', 'Ex-smoker', 'Never smoked', 'Currently smokes', 'BaseWeek',
-                'BaseFVC', 'BasePercent', 'list_dicom']
-    X_train = X_train[no_weeks]
-    X_train.to_csv(working_path + 'X_train_new.csv', index=False)
-    Y_train.to_csv(working_path + 'Y_train_new.csv', index=False)
-
-    return X_train, Y_train
-
-
-def prepare_train_data_cv_scaler(data_path, working_path, train, validation, scaler):
-    # =============================================================================
-    #  same as prepare_train_data_cv but now some columns are scaled
-    # =============================================================================
-    folder = 'train/'
-
-    train_ids = train['Patient'].unique()
-    n_dicom_dict = {"Patient": [], "n_dicom": [], "list_dicom": []}
-
-    for Patient_id in train_ids:
-        n_dicom_dict["n_dicom"].append(len(os.listdir(data_path + folder + Patient_id)))
-        n_dicom_dict["Patient"].append(Patient_id)
-        scan_names = np.sort(
-            np.array([int(i.split("/")[-1][:-4]) for i in os.listdir(data_path + folder + Patient_id)]))
-        delta = int(len(scan_names) / 10)
-        list_dicom_id = [scan_names[i * delta] for i in range(10)]
-        n_dicom_dict["list_dicom"].append(list_dicom_id)
-    dicom_pd = pd.DataFrame(n_dicom_dict)
-    temp_pd = pd.DataFrame(columns=train.columns)
-
-    for i in range(len(dicom_pd)):
-        patient_pd = train[train.Patient == dicom_pd.iloc[i].Patient]
-        zeroweek = patient_pd['Weeks'].min()
-        temp_pd = temp_pd.append(patient_pd[patient_pd.Weeks == zeroweek].iloc[0])
-    dicom_pd = pd.merge(dicom_pd, temp_pd, on=['Patient'])
-    dicom_pd.rename(columns={'FVC': 'BaseFVC', 'Weeks': 'BaseWeek', 'Percent': 'BasePercent'}, inplace=True)
-    df = pd.DataFrame(columns=dicom_pd.columns)
-    df['Weeks'] = None
-    df['FVC'] = None
-    for i in range(len(dicom_pd)):
-        dicom_pd_patient = dicom_pd[dicom_pd.Patient == dicom_pd.iloc[i].Patient]
-        patient_pd = train[train.Patient == dicom_pd.iloc[i].Patient]
-
-        dicom_pd_patient = pd.concat([dicom_pd_patient] * len(patient_pd), axis=0, ignore_index=True)
-
-        dicom_pd_patient = pd.concat(
-            [dicom_pd_patient.reset_index(drop=True), patient_pd[['Weeks', 'FVC']].reset_index(drop=True)], axis=1)
-        df = df.append(dicom_pd_patient)
-    dicom_pd = df
-    # one hot encoding for Sex & SmokingStatus
-    cols = ['Sex', 'SmokingStatus']
-    values = {'Sex': ['Male', 'Female'], 'SmokingStatus': ['Ex-smoker', 'Never smoked', 'Currently smokes']}
-    for col in cols:
-        for val in values[col]:
-            dicom_pd[val] = (dicom_pd[col] == val).astype(int)
-        dicom_pd.drop(col, axis=1, inplace=True)
-    Y_train = dicom_pd[['Weeks', 'FVC', 'BaseWeek', 'BaseFVC']]
-    # set the columns of X_test in the same order as the one in X_train.csv
-    cols = ['Patient', 'Weeks', 'Age', 'Male', 'Female', 'Ex-smoker', 'Never smoked', 'Currently smokes', 'BaseWeek',
-            'BaseFVC', 'BasePercent', 'list_dicom']
-
-    X_train = dicom_pd[cols]
-    # drop the line corresponding to the base week
-    Y_train = Y_train[~(Y_train.Weeks == Y_train.BaseWeek)]
-    X_train = X_train[~(X_train.Weeks == X_train.BaseWeek)]
-
-    no_weeks = ['Patient', 'Age', 'Male', 'Female', 'Ex-smoker', 'Never smoked', 'Currently smokes', 'BaseWeek',
-                'BaseFVC', 'BasePercent', 'list_dicom']
-    X_train = X_train[no_weeks]
-
-    # scaler
-    cols_to_std = ['Age', 'BaseWeek', 'BaseFVC', 'BasePercent']
-    X_train[cols_to_std] = scaler.fit_transform(X_train[cols_to_std])
-
-    X_train.to_csv(working_path + 'X_train_new.csv', index=False)
-    Y_train.to_csv(working_path + 'Y_train_new.csv', index=False)
-
-    return X_train, Y_train
